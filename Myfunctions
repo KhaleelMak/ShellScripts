@@ -1,0 +1,9 @@
+Hello ()
+{
+echo "Hi!! How are you"
+echo "Date:"; date
+}
+showdir ()
+{
+ls -l | grep d
+}
