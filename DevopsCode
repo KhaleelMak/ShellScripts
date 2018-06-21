@@ -1,0 +1,384 @@
+____________________________
+Install Maven:
+
+java -version
+yum -y install java-1.8.0-openjdk
+yum -y install java-1.8.0-openjdk-devel
+yum -y install wget
+wget http://www-eu.apache.org/dist/maven/maven-3/3.5.3/binaries/apache-maven-3.5.3-bin.tar.gz
+sudo tar xvfz apache-maven-3.5.3.bin.tar.gz -C /opt
+
+export M2_HOME=/opt/apache-maven-3.3.9
+export PATH=$PATH:$M2_HOME/bin
+
+mvn --version
+vi ~/.bash_profile
+(Copy export lines in bash_profile and run it)
+M2_HOME=/opt/apache-maven-3.3.9
+In PATH Line add -->:$M2_HOME/bin
+. .bash_profile
+
+_________________________________
+
+Working with GIT:
+sudo yum -y install git
+git clone https://github.com/KhaleelMak/Lync.git
+cd Lync/
+git branch
+git branch prod
+git checkout prod
+git status
+git remote
+git push -u origin prod
+vi src/main/webapp/index.jsp
+git add .
+git status
+git commit -m "Index Jsp is updated"
+git status
+git push -u origin
+git push -u origin prod
+
+To delete branch: 
+git branch -D <Branch Name>
+git push <remote Name>(origin) --delete <Branch Name>
+______________________________________
+
+Working with Tomcat:
+
+wget http://www-eu.apache.org/dist/tomcat/tomcat-7/v7.0.88/bin/apache-tomcat-7.0.88.tar.gz
+tar 
+sudo tar xvfz apache-tomcat-7.0.88.tar.gz -C /opt/
+cd /opt
+sudo vi apache-tomcat-7.0.88/conf/tomcat-users.xml
+
+(Replace with this)
+<?xml version='1.0' encoding='utf-8'?>
+<tomcat-users>
+  <role rolename="manager-gui"/>
+  <user username="tomcat" password="tomcat" roles="manager-gui"/>
+</tomcat-users>
+
+cd ..
+cd bin
+sudo ./startup.sh
+systemctl stop firewalld
+Go to browser with IP and port. (8080 by default)
+
+To change POrt number in TOMCAT:
+-->Goto tomcat>conf folder.
+Edit server.xml.
+Search "Connector port"
+Replace "8080" by your port number.
+Restart tomcat server.
+___________________________________________
+Working with Jenkins
+
+Browser --> Jenkins.io --> LTS --> CentOS
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key
+sudo yum -y install jenkins
+
+Adding Deploying to Container plugin for TOMCAT.
+
+Manage Jenkins --> Manage Plugins --> Available tab 
+Search "Deploy to Container" --> Download.
+
+Edit tomcat-user.xml
+<user username="deployer" password="deployer" roles="manager-script" />
+Restart TOMCAT
+
+Edit Jenkins Job
+Configure --> Post-build Actions --> Select the option:“Deploy war/ear to a container” --> Add-post-build action
+WAR/EAR files : **/*.war
+Context path : /(Name to appear on TOMCAT)
+Container : Tomcat
+Credentials : deployer/****** (If not add mannually)
+Tomcat URL : http://127.0.0.1:8081
+
+Upstream / Downstream :
+
+2nd Job --> Configure --> Build Triggers --> Build after job --> 03 Job
+Install Delivery-pipeline-plugin
+Manage Jenkins--> Manage Plugins --> Delivery-pipeline or Build pipeline
+
+MAster / Slave :
+
+Passwordless Authentication:
+Login or Create --> jenkins user
+ssh-keygen
+(enter enter)
+cd .ssh
+ls
+id_rsa.pub 
+vi id_rsa.pub (copy and paste in NODE(.ssh vi authorized_keys and user jenkins))
+.ssh permission 700
+authorized_keys 600
+
+Jenkins--> Manage jenkins --> Manage Nodes --> New Node
+Name: 
+Remote root directory: /home/jenkins
+Labled: Name
+Launch method: SSH
+Host : IP of node
+Host Key Verification Strategy: Non Verifying strategy
+save
+
+________________________________
+Working with Docker:
+
+get.docker.com
+curl -fsSL get.docker.com -o get-docker.sh
+sh get-docker.sh
+sudo usermod -aG docker khaleel
+Logout and Login !!!
+sudo systemctl start docker.service
+sudo systemctl enable docker.service
+sudo docker version
+
+hub.docker.com --> <image name>
+docker info (Entire info of Docker)
+docker images 
+docker run -it <image name> <cmd>
+Eg: docker run -it centos bash
+cat /etc/os-release
+top / ps -ef 
+docker exit (to stop exit docker)
+docker ps (to check running containers)
+docker ps -a (to get the history of all containers / sleeping mode )
+docker run -td centos bash (detached mode)
+docker exec -it <container ID> bash
+exit 
+docker container (to check commands)
+docker container stop <container ID>
+docker container rm <Conatainer name> (Remove when container is Sleep)
+docker run --rm -it --name first_demo ubuntu bash (delete after exit bcoz of  --rm)
+docker run --rm -it --name first_demo  --hostname ubuntu ubuntu bash 
+sudo docker run -d -p 8081:8082 --name nexus sonatype/nexus:oss
+sudo docker run -d --name sonarqube6.1 -p 9003:9000 sonarqube
+
+docker inspect <containerID> | grep "IPAddress"
+
+COW -- copy on write -> To download new app under conatainer
+
+IMAGE : Read Only
+CONATAINER : Containers are usaully immutable(epehmeral) --> temporary or dispo
+** Data will lost **
+
+Volumes and Bind Mounts
+
+________________________________
+Vagrant:
+
+vagrant up --> New Spin
+vagrant relaod --> edit of vagrant file
+vagarnt reload --provision --> to run script(Change path in Vagrant file)
+
+________________________________
+
+Nexus:
+
+http://192.168.33.100:8081/nexus
+
+Login : admin / admin123
+Create Repository -> 2 Repos for ( Release and Snapshots) 
+switch to summary copy plugin under dependencies...
+
+Go to POM.xml edit with Releases and Snapshots
+
+Go to cd ~/.m2/ --> vi settings.xml 
+Add credentials
+
+____________________________________
+
+SonarQube:
+sudo docker run -d --name sonarqube6.1 -p 9003:9000 sonarqube
+Login : admin/ admin./
+
+Add below plugin in POM.xml
+copy under dependencies
+
+<dependency>
+  <groupId>org.sonarsource.scanner.maven</groupId>
+<artifactId>sonar-maven-plugin</artifactId>
+<version>3.2</version>
+</dependency>
+  </dependencies>
+<profiles>
+<profile>
+<id>sonar</id>
+<activation>
+<activeByDefault>true</activeByDefault>
+</activation>
+<properties>
+<!-- Optional URL to server. Default value is http://localhost:9000 -->
+<sonar.host.url>
+http://192.168.33.100:9003
+</sonar.host.url>
+</properties>
+</profile>
+</profiles>
+
+_____________________________
+Chef Server:
+
+wget https://packages.chef.io/files/stable/chef-server/12.17.33/el/7/chef-server-core-12.17.33-1.el7.x86_64.rpm
+sudo rpm -ivh chef-server-core-12.17.33-1.el7.x86_64.rpm
+sudo chef-server-core reconfigure
+
+wget https://packages.chef.io/files/stable/chef-manage/2.5.15/el/7/chef-manage-2.5.15-1.el7.x86_64.rpm
+sudo rpm -ivh chef-manage-2.5.15-1.el7.x86_64.rpm
+sudo chef-manage-ctl reconfigure
+
+
+sudo systemctl stop firewalld
+sudo systemctl disable firewalld
+vi /etc/selinux/config
+sudo vi /etc/selinux/config
+sudo chef-server-ctl reconfigure
+sudo chef-manage-ctl reconfigure
+
+sudo chef-server-ctl user-create admin123 Chef Admin 'khaleelmak0@gmail.com' 'admin123' -f admin.pem
+
+Uname :  admin123 - Chef Admin 
+passwd:  admin123
+email:	 khaleelmak0@gmail.com
+
+sudo chef-server-ctl org-create infy 'Infosys Inc' -a admin123 --filename infy-validator.pem
+
+Company Name: infy 'Infosys Inc'
+
+Chef Workstation:
+which ruby
+sudo yum -y install ruby
+which ruby
+sudo wget https://packages.chef.io/files/stable/chefdk/3.0.36/el/7/chefdk-3.0.36-1.el7.x86_64.rpm
+sudo rpm -ivh chefdk-3.0.36-1.el7.x86_64.rpm
+
+
+Go to user/ of Chef Server : ssh-key
+.shh --> copy id_rsa.pub to workstation .shh/authorized_keys (600 permissioins)
+
+Copy pem files in .chef (chef --> workstation)
+Download ChefDK
+wget
+rpm
+sudo knife ssl fetch
+sudo knife ssl check
+Download Chef Starter Kit winzip and unzip
+knife ssl fetch
+knife ssl check
+knife user list
+
+Chef Node / Client
+ sudo chef-client
+____________
+
+CookBook for Downloading Tomcat:
+
+http://redrockdigimark.com/apachemirror/tomcat/tomcat-7/v7.0.88/bin/apache-tomcat-7.0.88.tar.gz
+
+_______________________
+Download/Install Python:
+
+sudo yum groupinstall -y "Development Tools"
+wget https://www.python.org/ftp/python/3.6.4/Python-3.6.4.tar.xz
+sudo tar -xJf Python-3.6.4.tar.xz
+sudo cd Python-3.6.4/
+./configure
+sudo make (.c to .o to binary files)
+sudo make install
+
+ (sudo yum -y install zlib-devel)
+ (sudo yum -y isnstall openssl-devel)
+
+sudo pip3.6 install flask
+
+Install Flask Framework:
+pip3.6 install flask
+
+Build Tool:
+pip3.6 install pybuilder
+
+pip3.6 freeze
+pip3.6 install virtualenv (it is mandatory for py projects)
+
+virtualenv demo1
+ls
+cd bin/
+source ./activate (TO start the virtual environment)
+pip3.6
+deactivate (To end up virtualenv)
+
+
+
+source venv/bin/activate
+pyb
+
+1) Code should be in Project /scr/main/python/(run.py)
+2)create build.py 
+
+
+
+shell script automatic env activate 
+
+
+__________________
+NGINX
+
+sudo yum -y install nginx
+systemctl start nginx
+default port : 80
+Configuration file : /etc/nginx/nginx.config
+
+_______________
+Groovy in JenkinsFile
+
+Add git pull and id form jenkins for GIT
+
+pipeline {
+	agent any 
+
+stages {
+	
+  stage('Git pull'){
+	  steps{
+  		git branch: 'master', 
+  		credentialsId: 'gitID', 
+  		url: 'https://github.com/KhaleelMak/Jenkinsfile_porj.git'
+		}
+	}
+	stage('validate'){
+		steps {
+		echo 'Validating the source code..'
+		sh 'mvn validate'
+		}
+	}
+
+	stage('mvn test'){
+	steps{
+	echo 'Testing the code..'
+	sh 'mvn test'
+		}
+	}
+	stage('mvn compile'){
+	steps{
+	echo 'Compile..'
+	sh 'mvn compile'
+	}
+	}
+
+	stage('mvn package'){
+	steps{
+	echo 'Creating .war file'
+	sh 'mvn package'
+	}
+	}
+	
+	stage(Deploy){
+	steps{
+	echo 'Deploying app to Tomcat'
+
+	}
+	}
+}
+}
